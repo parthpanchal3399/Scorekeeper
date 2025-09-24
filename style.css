@@ -391,6 +391,12 @@ pre code {
 }
 
 /* Buttons */
+.button-group {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
 .btn {
   display: inline-flex;
   align-items: center;
@@ -468,6 +474,16 @@ pre code {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+.btn--danger {
+  background-color: var(--color-red-500);
+  color: white;
+}
+
+.btn--danger:hover {
+  background-color: var(--color-red-400);
+}
+
 
 /* Form elements */
 .form-control {

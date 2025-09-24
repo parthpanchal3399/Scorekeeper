@@ -26,8 +26,8 @@ function ScoreKeeper() {
         
         setPlayers(samplePlayers);
         setGames(sampleGames);
-        setNextPlayerId(5);
-        setNextGameId(3);
+        setNextPlayerId(1);
+        setNextGameId(1);
     }, []);
 
     // Add a new player
@@ -99,6 +99,22 @@ function ScoreKeeper() {
 
         setGames([...games, newGame]);
         setNextGameId(nextGameId + 1);
+    };
+
+    // Reset game: Confirmation and reset logic
+    const resetGame = () => {
+        if (!window.confirm("Are you sure you want to reset all game scores?")) {
+            return; // User cancelled, do nothing
+        }
+        const initialGame = {
+            id: 1,
+            scores: {}
+        };
+        players.forEach(player => {
+            initialGame.scores[player.id] = 0; // Set all player scores to 0
+        });
+        setGames([initialGame]);
+        setNextGameId(2); // Next game will be id 2
     };
 
     // Update a score - Fixed version
@@ -260,9 +276,15 @@ function ScoreKeeper() {
                 <section className="section">
                     <h2 className="section-title">📊 Score Table</h2>
                     
-                    <button className="btn btn--secondary" onClick={addGame}>
-                        Add New Game
-                    </button>
+                    <div className="button-group">
+                        <button className="btn btn--secondary" onClick={addGame}>
+                            Add New Game
+                        </button>
+
+                        <button className="btn btn--danger" onClick={resetGame}>
+                            Reset Game
+                        </button>
+                    </div>
                     
                     <div className="table-container">
                         <table className="score-table">
