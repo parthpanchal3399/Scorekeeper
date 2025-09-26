@@ -163,16 +163,22 @@ function ScoreKeeper() {
                 chartInstanceRef.current.destroy();
             }
 
-            // Create new chart
+            // Create new chart with sorted data
+            const sortedPlayers = [...players].sort((a, b) => {
+                const scoreA = totals[a.id] || 0;
+                const scoreB = totals[b.id] || 0;
+                return scoreB - scoreA; // Descending order (highest first)
+            });
+
             chartInstanceRef.current = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: players.map(player => player.name),
+                    labels: sortedPlayers.map(player => player.name),
                     datasets: [{
                         label: 'Total Score',
-                        data: players.map(player => totals[player.id] || 0),
-                        backgroundColor: players.map(player => player.color),
-                        borderColor: players.map(player => player.color),
+                        data: sortedPlayers.map(player => totals[player.id] || 0),
+                        backgroundColor: sortedPlayers.map(player => player.color),
+                        borderColor: sortedPlayers.map(player => player.color),
                         borderWidth: 2
                     }]
                 },
