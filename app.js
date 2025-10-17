@@ -1,56 +1,47 @@
 const { useState, useEffect, useRef } = React;
 
+function getRandomColor() {
+    const hue = Math.floor(Math.random() * 360);
+    return `hsl(${hue}, 70%, 60%)`;
+}
+
 function ScoreKeeper() {
     const [players, setPlayers] = useState([]);
     const [games, setGames] = useState([]);
     const [newPlayerName, setNewPlayerName] = useState('');
-    const [newPlayerColor, setNewPlayerColor] = useState('#ff6b6b');
+    const [newPlayerColor, setNewPlayerColor] = useState(getRandomColor());
     const [nextPlayerId, setNextPlayerId] = useState(1);
     const [nextGameId, setNextGameId] = useState(1);
     const [colorScheme, setColorScheme] = useState('light');
-
+    const [chartType, setChartType] = useState('bar');
     const chartRef = useRef(null);
     const chartInstanceRef = useRef(null);
 
-    function getRandomColor() {
-        // Generate a random hue for bright/varied colors
-        const hue = Math.floor(Math.random() * 360);
-        // Use HSL for better vibrancy and contrast
-        return `hsl(${hue}, 70%, 60%)`;
-    }
-
     // Load persisted state on mount
     useEffect(() => {
-        // Restore dark/light mode
         const savedScheme = localStorage.getItem('scorekeeper_color_scheme');
         if (savedScheme) setColorScheme(savedScheme);
 
-        // Restore players/games state
         const savedPlayers = localStorage.getItem('scorekeeper_players');
         const savedGames = localStorage.getItem('scorekeeper_games');
-
+        
         if (savedPlayers) {
             const playersArr = JSON.parse(savedPlayers);
             setPlayers(playersArr);
-            const maxId = playersArr.reduce((max, p) => Math.max(max, p.id), 0);
-            setNextPlayerId(maxId + 1);
+            setNextPlayerId(playersArr.reduce((max, p) => Math.max(max, p.id), 0) + 1);
         }
-
         if (savedGames) {
             const gamesArr = JSON.parse(savedGames);
             setGames(gamesArr);
-            const maxGameId = gamesArr.reduce((max, g) => Math.max(max, g.id), 0);
-            setNextGameId(maxGameId + 1);
+            setNextGameId(gamesArr.reduce((max, g) => Math.max(max, g.id), 0) + 1);
         }
     }, []);
 
-    // Update color scheme on <body> and persist
     useEffect(() => {
         document.body.setAttribute('data-color-scheme', colorScheme);
         localStorage.setItem('scorekeeper_color_scheme', colorScheme);
     }, [colorScheme]);
 
-    // Persist players/games to localStorage
     useEffect(() => {
         localStorage.setItem('scorekeeper_players', JSON.stringify(players));
         localStorage.setItem('scorekeeper_games', JSON.stringify(games));
@@ -73,36 +64,26 @@ function ScoreKeeper() {
         setPlayers([...players, newPlayer]);
         setNextPlayerId(nextPlayerId + 1);
         setNewPlayerName('');
-        setNewPlayerColor(getRandomColor());  // <-- Randomize color picker here
-    
+        setNewPlayerColor(getRandomColor());
+
         const updatedGames = games.map(game => ({
             ...game,
-            scores: {
-                ...game.scores,
-                [newPlayer.id]: 0
-            }
+            scores: { ...game.scores, [newPlayer.id]: 0 }
         }));
         setGames(updatedGames);
     };
 
     const removePlayer = (playerId) => {
         setPlayers(players.filter(player => player.id !== playerId));
-        const updatedGames = games.map(game => {
+        setGames(games.map(game => {
             const newScores = { ...game.scores };
             delete newScores[playerId];
-            return {
-                ...game,
-                scores: newScores
-            };
-        });
-        setGames(updatedGames);
+            return { ...game, scores: newScores };
+        }));
     };
 
     const addGame = () => {
-        const newGame = {
-            id: nextGameId,
-            scores: {}
-        };
+        const newGame = { id: nextGameId, scores: {} };
         players.forEach(player => {
             newGame.scores[player.id] = 0;
         });
@@ -114,10 +95,7 @@ function ScoreKeeper() {
         if (!window.confirm("Are you sure you want to reset all game scores? This will keep your players and start with one empty game.")) {
             return;
         }
-        const initialGame = {
-            id: 1,
-            scores: {}
-        };
+        const initialGame = { id: 1, scores: {} };
         players.forEach(player => {
             initialGame.scores[player.id] = 0;
         });
@@ -131,46 +109,44 @@ function ScoreKeeper() {
             const parsed = parseFloat(inputValue);
             numericScore = isNaN(parsed) ? 0 : parsed;
         }
-        const updatedGames = games.map(game => {
-            if (game.id === gameId) {
-                return {
-                    ...game,
-                    scores: {
-                        ...game.scores,
-                        [playerId]: numericScore
-                    }
-                };
-            }
-            return game;
-        });
-        setGames(updatedGames);
+        setGames(games.map(game =>
+            game.id === gameId
+                ? { ...game, scores: { ...game.scores, [playerId]: numericScore } }
+                : game
+        ));
     };
 
     const getTotalScores = () => {
         const totals = {};
         players.forEach(player => {
-            totals[player.id] = games.reduce((total, game) => {
-                return total + (game.scores[player.id] || 0);
-            }, 0);
+            totals[player.id] = games.reduce((total, game) =>
+                total + (game.scores[player.id] || 0), 0);
         });
         return totals;
     };
 
-    // Draw chart by descending total
-    useEffect(() => {
-        if (chartRef.current && players.length > 0) {
-            const ctx = chartRef.current.getContext('2d');
-            const totals = getTotalScores();
-            if (chartInstanceRef.current) {
-                chartInstanceRef.current.destroy();
-            }
-            // Sort players descending by score for the chart
-            const sortedPlayers = [...players].sort((a, b) => {
-                const scoreA = totals[a.id] || 0;
-                const scoreB = totals[b.id] || 0;
-                return scoreB - scoreA;
+    const getCumulativeScores = () => {
+        const cumulative = {};
+        players.forEach(player => {
+            cumulative[player.id] = [];
+            let runningTotal = 0;
+            games.forEach(game => {
+                runningTotal += (game.scores[player.id] || 0);
+                cumulative[player.id].push(runningTotal);
             });
-            chartInstanceRef.current = new Chart(ctx, {
+        });
+        return cumulative;
+    };
+
+    const getChartConfig = () => {
+        const textColor = colorScheme === "dark" ? "#fff" : "#222";
+        
+        if (chartType === 'bar') {
+            const totals = getTotalScores();
+            const sortedPlayers = [...players].sort((a, b) =>
+                (totals[b.id] || 0) - (totals[a.id] || 0));
+            
+            return {
                 type: 'bar',
                 data: {
                     labels: sortedPlayers.map(player => player.name),
@@ -185,34 +161,156 @@ function ScoreKeeper() {
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Total Score'
-                            }
-                        },
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Players'
-                            }
-                        }
-                    },
                     plugins: {
                         legend: {
-                            display: false
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                font: { size: 14, weight: 'bold' },
+                                color: textColor,
+                                usePointStyle: true,
+                                pointStyle: 'circle',
+                                padding: 15,
+                                generateLabels: (chart) => {
+                                    const data = chart.data;
+                                    return data.labels.map((label, i) => ({
+                                        text: label,
+                                        fillStyle: data.datasets[0].backgroundColor[i],
+                                        strokeStyle: data.datasets[0].borderColor[i],
+                                        lineWidth: 2,
+                                        hidden: false,
+                                        index: i,
+                                        pointStyle: 'circle',
+                                        fontColor: textColor
+                                    }));
+                                }
+                            }
                         },
                         title: {
                             display: true,
-                            text: 'Player Scores'
+                            text: 'Player Total Scores',
+                            font: { size: 22, weight: 'bold' },
+                            color: textColor
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Players',
+                                font: { size: 18, weight: 'bold' },
+                                color: textColor
+                            },
+                            ticks: {
+                                font: { size: 16, weight: 'bold' },
+                                color: textColor
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Total Score',
+                                font: { size: 18, weight: 'bold' },
+                                color: textColor
+                            },
+                            ticks: {
+                                font: { size: 16, weight: 'bold' },
+                                color: textColor
+                            }
                         }
                     }
                 }
-            });
+            };
+        } else {
+            // Line chart: X-axis = games, Y-axis = cumulative total scores (on right)
+            const gameLabels = games.map((_, index) => `Game ${index + 1}`);
+            const cumulativeScores = getCumulativeScores();
+            const datasets = players.map(player => ({
+                label: player.name,
+                data: cumulativeScores[player.id],
+                borderColor: player.color,
+                backgroundColor: player.color,
+                borderWidth: 3,
+                pointRadius: 5,
+                pointHoverRadius: 7,
+                yAxisID: 'y'
+            }));
+
+            return {
+                type: 'line',
+                data: {
+                    labels: gameLabels,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                font: { size: 14, weight: 'bold' },
+                                color: textColor,
+                                usePointStyle: true,
+                                pointStyle: 'circle',
+                                padding: 15
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Total Score Progress Over Games',
+                            font: { size: 22, weight: 'bold' },
+                            color: textColor
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Games',
+                                font: { size: 18, weight: 'bold' },
+                                color: textColor
+                            },
+                            ticks: {
+                                font: { size: 16, weight: 'bold' },
+                                color: textColor
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Total Score',
+                                font: { size: 18, weight: 'bold' },
+                                color: textColor
+                            },
+                            ticks: {
+                                font: { size: 16, weight: 'bold' },
+                                color: textColor
+                            }
+                        }
+                    }
+                }
+            };
         }
-    }, [players, games]);
+    };
+
+    useEffect(() => {
+        if (chartRef.current && players.length > 0 && games.length > 0) {
+            const ctx = chartRef.current.getContext('2d');
+            
+            if (chartInstanceRef.current) {
+                chartInstanceRef.current.destroy();
+            }
+
+            const config = getChartConfig();
+            chartInstanceRef.current = new Chart(ctx, config);
+        }
+    }, [players, games, colorScheme, chartType]);
 
     const totals = getTotalScores();
 
@@ -221,12 +319,11 @@ function ScoreKeeper() {
             <header className="app-header">
                 <h1 className="app-title">🎯 ScoreKeeper</h1>
                 <p className="app-subtitle">Keep track of game scores for any game!</p>
-                {/* Dark/Light mode toggle */}
                 <button className="btn btn--toggle" onClick={() => setColorScheme(c => c === 'light' ? 'dark' : 'light')}>
                     {colorScheme === 'light' ? '🌙 Dark Mode' : '☀️ Light Mode'}
                 </button>
             </header>
-            {/* Player Management Section */}
+
             <section className="section">
                 <h2 className="section-title">👥 Player Management</h2>
                 <div className="player-form">
@@ -250,42 +347,31 @@ function ScoreKeeper() {
                             onChange={(e) => setNewPlayerColor(e.target.value)}
                         />
                     </div>
-                    <button className="btn btn--primary" onClick={addPlayer}>
-                        Add Player
-                    </button>
+                    <button className="btn btn--primary" onClick={addPlayer}>Add Player</button>
                 </div>
                 {players.length > 0 && (
                     <div className="players-list">
                         {players.map(player => (
                             <div key={player.id} className="player-item">
-                                <div
-                                    className="player-color-dot"
-                                    style={{ backgroundColor: player.color }}
-                                ></div>
+                                <div className="player-color-dot" style={{ backgroundColor: player.color }}></div>
                                 <span>{player.name}</span>
                                 <button
                                     className="remove-player-btn"
                                     onClick={() => removePlayer(player.id)}
                                     title="Remove player"
-                                >
-                                    ×
-                                </button>
+                                >×</button>
                             </div>
                         ))}
                     </div>
                 )}
             </section>
-            {/* Score Table Section */}
+
             {players.length > 0 ? (
                 <section className="section">
                     <h2 className="section-title">📊 Score Table</h2>
                     <div className="button-group">
-                        <button className="btn btn--secondary" onClick={addGame}>
-                            Add New Game
-                        </button>
-                        <button className="btn btn--danger" onClick={resetGame}>
-                            Reset Game
-                        </button>
+                        <button className="btn btn--secondary" onClick={addGame}>Add New Game</button>
+                        <button className="btn btn--danger" onClick={resetGame}>Reset Game</button>
                     </div>
                     <div className="table-container">
                         <table className="score-table">
@@ -295,10 +381,7 @@ function ScoreKeeper() {
                                     {players.map(player => (
                                         <th key={player.id}>
                                             <div className="player-header">
-                                                <div
-                                                    className="player-color-dot"
-                                                    style={{ backgroundColor: player.color }}
-                                                ></div>
+                                                <div className="player-color-dot" style={{ backgroundColor: player.color }}></div>
                                                 {player.name}
                                             </div>
                                         </th>
@@ -327,9 +410,7 @@ function ScoreKeeper() {
                                         <td className="game-label">Total</td>
                                         {players.map(player => (
                                             <td key={player.id}>
-                                                <span className="total-score">
-                                                    {totals[player.id] || 0}
-                                                </span>
+                                                <span className="total-score">{totals[player.id] || 0}</span>
                                             </td>
                                         ))}
                                     </tr>
@@ -347,10 +428,17 @@ function ScoreKeeper() {
                     </div>
                 </section>
             )}
-            {/* Chart Section */}
+
             {players.length > 0 && games.length > 0 && (
                 <section className="section">
                     <h2 className="section-title">📈 Score Chart</h2>
+                    <button
+                        className="btn btn--secondary"
+                        onClick={() => setChartType(chartType === "bar" ? "line" : "bar")}
+                        style={{ marginBottom: '16px' }}
+                    >
+                        {chartType === "bar" ? "📈 Switch to Line Chart" : "📊 Switch to Bar Chart"}
+                    </button>
                     <div className="chart-container">
                         <canvas ref={chartRef} className="chart-canvas"></canvas>
                     </div>
