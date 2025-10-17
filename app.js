@@ -233,8 +233,8 @@ function ScoreKeeper() {
                 borderColor: player.color,
                 backgroundColor: player.color,
                 borderWidth: 3,
-                pointRadius: 5,
-                pointHoverRadius: 7,
+                pointRadius: 2,
+                pointHoverRadius: 5,
                 yAxisID: 'y'
             }));
 
