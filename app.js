@@ -14,6 +14,9 @@ function ScoreKeeper() {
     const [nextGameId, setNextGameId] = useState(1);
     const [colorScheme, setColorScheme] = useState('light');
     const [chartType, setChartType] = useState('bar');
+    const [editingPlayerId, setEditingPlayerId] = useState(null);
+    const [editName, setEditName] = useState('');
+    const [editColor, setEditColor] = useState('');
     const chartRef = useRef(null);
     const chartInstanceRef = useRef(null);
 
@@ -46,6 +49,34 @@ function ScoreKeeper() {
         localStorage.setItem('scorekeeper_players', JSON.stringify(players));
         localStorage.setItem('scorekeeper_games', JSON.stringify(games));
     }, [players, games]);
+
+    const startEditing = (player) => {
+        setEditingPlayerId(player.id);
+        setEditName(player.name);
+        setEditColor(player.color);
+    };
+
+    const cancelEditing = () => {
+        setEditingPlayerId(null);
+    };
+
+    const saveEdit = (playerId) => {
+        if (editName.trim() === '') {
+            alert('Player name cannot be empty');
+            return;
+        }
+        // Check for duplicate names (excluding the current player)
+        if (players.some(p => p.id !== playerId && p.name.toLowerCase() === editName.toLowerCase())) {
+            alert('Player name already exists');
+            return;
+        }
+        
+        // Update the player in the array
+        setPlayers(players.map(p => 
+            p.id === playerId ? { ...p, name: editName.trim(), color: editColor } : p
+        ));
+        setEditingPlayerId(null); // Exit edit mode
+    };
 
     const addPlayer = () => {
         if (newPlayerName.trim() === '') {
@@ -353,13 +384,43 @@ function ScoreKeeper() {
                     <div className="players-list">
                         {players.map(player => (
                             <div key={player.id} className="player-item">
-                                <div className="player-color-dot" style={{ backgroundColor: player.color }}></div>
-                                <span>{player.name}</span>
-                                <button
-                                    className="remove-player-btn"
-                                    onClick={() => removePlayer(player.id)}
-                                    title="Remove player"
-                                >×</button>
+                                {editingPlayerId === player.id ? (
+                                    /* Edit Mode UI */
+                                    <div className="player-edit-mode">
+                                        <input 
+                                            type="color" 
+                                            className="edit-color-input"
+                                            value={editColor} 
+                                            onChange={(e) => setEditColor(e.target.value)} 
+                                        />
+                                        <input 
+                                            type="text" 
+                                            className="form-control edit-name-input"
+                                            value={editName} 
+                                            onChange={(e) => setEditName(e.target.value)} 
+                                            onKeyPress={(e) => e.key === 'Enter' && saveEdit(player.id)}
+                                            autoFocus
+                                        />
+                                        <button className="icon-btn save-btn" onClick={() => saveEdit(player.id)} title="Save">✓</button>
+                                        <button className="icon-btn cancel-btn" onClick={cancelEditing} title="Cancel">✕</button>
+                                    </div>
+                                ) : (
+                                    /* Standard View UI */
+                                    <>
+                                        <div className="player-color-dot" style={{ backgroundColor: player.color }}></div>
+                                        <span onDoubleClick={() => startEditing(player)}>{player.name}</span>
+                                        <button 
+                                            className="icon-btn edit-player-btn"
+                                            onClick={() => startEditing(player)}
+                                            title="Edit player"
+                                        >✎</button>
+                                        <button
+                                            className="icon-btn remove-player-btn"
+                                            onClick={() => removePlayer(player.id)}
+                                            title="Remove player"
+                                        >×</button>
+                                    </>
+                                )}
                             </div>
                         ))}
                     </div>

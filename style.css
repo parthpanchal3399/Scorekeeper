@@ -797,6 +797,36 @@ select.form-control {
 }
 
 /* Player Management */
+.player-edit-mode {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+}
+
+.edit-color-input {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.edit-color-input::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+.edit-color-input::-webkit-color-swatch {
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+}
+
+.edit-name-input {
+  padding: var(--space-4) var(--space-8);
+  font-size: var(--font-size-sm);
+  width: 120px;
+  height: 28px;
+}
+
 .player-form {
   display: flex;
   gap: var(--space-12);
@@ -844,6 +874,28 @@ select.form-control {
   border: 1px solid var(--color-border);
 }
 
+/* Icon Buttons (Edit, Save, Cancel, Remove) */
+.icon-btn {
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  padding: var(--space-2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  font-size: var(--font-size-sm);
+  transition: all var(--duration-fast);
+}
+
+.edit-player-btn:hover {
+  background-color: var(--color-primary);
+  color: white;
+}
+
 .remove-player-btn {
   background: none;
   border: none;
@@ -861,6 +913,16 @@ select.form-control {
 
 .remove-player-btn:hover {
   background-color: var(--color-error);
+  color: white;
+}
+
+.save-btn:hover {
+  background-color: var(--color-success);
+  color: white;
+}
+
+.cancel-btn:hover {
+  background-color: var(--color-warning);
   color: white;
 }
 
