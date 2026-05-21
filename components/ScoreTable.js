@@ -1,5 +1,7 @@
 // components/ScoreTable.js
 function ScoreTable({ players, games, totals, addGame, removeGame, resetGames, updateScore }) {
+    const [showFinishModal, setShowFinishModal] = React.useState(false); // Add state
+
     if (players.length === 0) return (
         <section className="section">
             <div className="empty-state">
@@ -15,7 +17,7 @@ function ScoreTable({ players, games, totals, addGame, removeGame, resetGames, u
             <h2 className="section-title">📊 Score Table</h2>
             <div className="button-group">
                 <button className="btn btn--secondary" onClick={addGame}>Add New Game</button>
-                <button className="btn btn--danger" onClick={resetGames}>Reset Game</button>
+                <button className="btn btn--danger" onClick={() => resetGames(false)}>Reset Game</button>
                 {games.length > 0 && (
                     <button className="btn btn--outline" onClick={() => exportToCSV(players, games, totals)}>
                         📥 Export CSV
@@ -25,6 +27,7 @@ function ScoreTable({ players, games, totals, addGame, removeGame, resetGames, u
             <div className="table-container">
                 <table className="score-table">
                     <thead>
+                        {/* Table head stays identical... */}
                         <tr>
                             <th>Game</th>
                             {players.map(player => (
@@ -38,6 +41,7 @@ function ScoreTable({ players, games, totals, addGame, removeGame, resetGames, u
                         </tr>
                     </thead>
                     <tbody>
+                        {/* Table body stays identical... */}
                         {games.map((game, index) => (
                             <tr key={game.id}>
                                 <td className="game-label">
@@ -69,6 +73,25 @@ function ScoreTable({ players, games, totals, addGame, removeGame, resetGames, u
                     </tbody>
                 </table>
             </div>
+
+            {/* NEW FINISH GAME BUTTON BELOW TABLE */}
+            {games.length > 0 && players.length > 0 && (
+                <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'center' }}>
+                    <button className="btn btn--primary btn--lg" onClick={() => setShowFinishModal(true)}>
+                        🏆 Finish Game
+                    </button>
+                </div>
+            )}
+
+            {/* MODAL COMPONENT */}
+            {showFinishModal && (
+                <FinishModals 
+                    players={players} 
+                    totals={totals} 
+                    onClose={() => setShowFinishModal(false)}
+                    onReset={resetGames}
+                />
+            )}
         </section>
     );
 }

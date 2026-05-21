@@ -66,8 +66,10 @@ function useGameState() {
         }
     };
 
-    const resetGames = () => {
-        if (!window.confirm("Are you sure you want to reset all game scores? This keeps players but clears scores.")) return;
+    const resetGames = (force = false) => {
+        if (!force) {
+            if (!window.confirm("Are you sure you want to reset all game scores? This keeps players but clears scores.")) return;
+        }
         const initialGame = { id: 1, scores: {} };
         players.forEach(player => { initialGame.scores[player.id] = 0; });
         setGames([initialGame]);
