@@ -5,18 +5,20 @@ function FinishModals({ players, totals, onClose, onReset }) {
     const [winners, setWinners] = React.useState([]);
 
     const handleConfirm = () => {
-        // Sort players based on user selection
-        const sortedPlayers = [...players].sort((a, b) => {
-            const scoreA = totals[a.id] || 0;
-            const scoreB = totals[b.id] || 0;
-            // Ascending: Highest Score is #1. Descending: Lowest Score is #1.
-            return sortOrder === 'asc' ? scoreB - scoreA : scoreA - scoreB;
-        });
+        // 1. Get unique scores and sort them
+        const uniqueScores = [...new Set(players.map(p => totals[p.id] || 0))];
+        uniqueScores.sort((a, b) => sortOrder === 'asc' ? b - a : a - b);
         
-        setWinners(sortedPlayers.slice(0, 3)); // Get top 3
+        // 2. Group players by these top 3 scores
+        const groupedWinners = [
+            players.filter(p => (totals[p.id] || 0) === uniqueScores[0]), // 1st Place (Everyone with top score)
+            uniqueScores[1] !== undefined ? players.filter(p => (totals[p.id] || 0) === uniqueScores[1]) : [], // 2nd Place
+            uniqueScores[2] !== undefined ? players.filter(p => (totals[p.id] || 0) === uniqueScores[2]) : []  // 3rd Place
+        ];
+        
+        setWinners(groupedWinners);
         setStep('podium');
         
-        // Trigger Confetti Animation
         if (window.confetti) {
             confetti({
                 particleCount: 200,
@@ -28,8 +30,30 @@ function FinishModals({ players, totals, onClose, onReset }) {
     };
 
     const handleFinish = () => {
-        onReset(true); // pass true to skip the default confirm dialog
+        onReset(true); 
         onClose();
+    };
+
+    // Helper component to render a single podium step handling multiple players
+    const renderPodiumStep = (placePlayers, placeClass, placeLabel) => {
+        if (!placePlayers || placePlayers.length === 0) return null;
+        
+        return (
+            <div className={`podium-place ${placeClass}`}>
+                <div className="podium-avatars-group">
+                    {placePlayers.map(p => (
+                        <div key={p.id} className="podium-player-info">
+                            <div className="podium-avatar" style={{backgroundColor: p.color}}>
+                                {p.avatar}
+                            </div>
+                            <div className="podium-name">{p.name}</div>
+                        </div>
+                    ))}
+                </div>
+                <div className="podium-score">{totals[placePlayers[0].id] || 0}</div>
+                <div className="podium-step">{placeLabel}</div>
+            </div>
+        );
     };
 
     return (
@@ -58,35 +82,10 @@ function FinishModals({ players, totals, onClose, onReset }) {
                         <h2 style={{marginTop: 0}}>🎉 Top Players 🎉</h2>
                         
                         <div className="podium-container">
-                            {/* 2nd Place */}
-                            {winners[1] && (
-                                <div className="podium-place place-second">
-                                    <div className="podium-avatar" style={{backgroundColor: winners[1].color}}></div>
-                                    <div className="podium-name">{winners[1].name}</div>
-                                    <div className="podium-score">{totals[winners[1].id] || 0}</div>
-                                    <div className="podium-step">2nd</div>
-                                </div>
-                            )}
-                            
-                            {/* 1st Place */}
-                            {winners[0] && (
-                                <div className="podium-place place-first">
-                                    <div className="podium-avatar" style={{backgroundColor: winners[0].color}}></div>
-                                    <div className="podium-name">{winners[0].name}</div>
-                                    <div className="podium-score">{totals[winners[0].id] || 0}</div>
-                                    <div className="podium-step">1st</div>
-                                </div>
-                            )}
-                            
-                            {/* 3rd Place */}
-                            {winners[2] && (
-                                <div className="podium-place place-third">
-                                    <div className="podium-avatar" style={{backgroundColor: winners[2].color}}></div>
-                                    <div className="podium-name">{winners[2].name}</div>
-                                    <div className="podium-score">{totals[winners[2].id] || 0}</div>
-                                    <div className="podium-step">3rd</div>
-                                </div>
-                            )}
+                            {/* Render steps in order of 2nd, 1st, 3rd to keep 1st place in the middle graphically */}
+                            {renderPodiumStep(winners[1], 'place-second', '2nd')}
+                            {renderPodiumStep(winners[0], 'place-first', '1st')}
+                            {renderPodiumStep(winners[2], 'place-third', '3rd')}
                         </div>
 
                         <div className="button-group" style={{ justifyContent: 'center', marginTop: '32px', marginBottom: 0 }}>

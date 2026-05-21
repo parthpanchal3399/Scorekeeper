@@ -1170,3 +1170,70 @@ select.form-control {
   background: linear-gradient(135deg, #CD7F32, #A0522D); /* Bronze */
   color: var(--color-white);
 }
+
+/* Avatar UI Updates */
+.avatar-btn {
+  font-size: 20px;
+  padding: 0 var(--space-12);
+  height: 40px;
+  background-color: var(--color-surface);
+}
+
+.edit-avatar-btn {
+  font-size: 20px;
+  width: 32px;
+  height: 32px;
+  background-color: var(--color-bg-2);
+}
+
+.player-color-dot {
+  /* Increase size slightly to fit emoji */
+  width: 28px; 
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  box-shadow: inset 0 2px 4px rgba(255,255,255,0.3);
+}
+
+/* Update the podium avatar for the finish modal */
+.podium-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+
+
+/* Update podium layouts for multiple tied players */
+.podium-place {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 90px;
+  flex: 1; /* Allow columns to flex if many people tie */
+}
+
+.podium-avatars-group {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-8);
+  margin-bottom: var(--space-8);
+  width: 100%;
+}
+
+.podium-player-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 60px; /* Limit width to keep names from overlapping */
+}
+
+.podium-avatar {
+  /* Ensure margin-bottom is adjusted for the new flex-wrap layout */
+  margin-bottom: var(--space-4) !important;
+}

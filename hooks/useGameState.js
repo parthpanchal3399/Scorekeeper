@@ -13,8 +13,10 @@ function useGameState() {
         
         if (savedPlayers) {
             const playersArr = JSON.parse(savedPlayers);
+            const migratedPlayers = playersArr.map(p => ({ ...p, avatar: p.avatar || getRandomAvatar() }));
             setPlayers(playersArr);
-            setNextPlayerId(playersArr.reduce((max, p) => Math.max(max, p.id), 0) + 1);
+            setPlayers(migratedPlayers);
+            setNextPlayerId(migratedPlayers.reduce((max, p) => Math.max(max, p.id), 0) + 1);
         }
         if (savedGames) {
             const gamesArr = JSON.parse(savedGames);
@@ -28,8 +30,8 @@ function useGameState() {
         localStorage.setItem('scorekeeper_games', JSON.stringify(games));
     }, [players, games]);
 
-    const addPlayer = (name, color) => {
-        const newPlayer = { id: nextPlayerId, name: name.trim(), color };
+    const addPlayer = (name, color, avatar) => {
+        const newPlayer = { id: nextPlayerId, name: name.trim(), color, avatar: avatar || getRandomAvatar() };
         setPlayers([...players, newPlayer]);
         setNextPlayerId(nextPlayerId + 1);
         setGames(games.map(game => ({
@@ -38,9 +40,9 @@ function useGameState() {
         })));
     };
 
-    const updatePlayer = (id, newName, newColor) => {
+    const updatePlayer = (id, newName, newColor, newAvatar) => {
         setPlayers(players.map(p => 
-            p.id === id ? { ...p, name: newName.trim(), color: newColor } : p
+            p.id === id ? { ...p, name: newName.trim(), color: newColor, avatar: newAvatar } : p
         ));
     };
 

@@ -1,6 +1,9 @@
 // components/ScoreTable.js
 function ScoreTable({ players, games, totals, addGame, removeGame, resetGames, updateScore }) {
-    const [showFinishModal, setShowFinishModal] = React.useState(false); // Add state
+    const [showFinishModal, setShowFinishModal] = React.useState(false);
+
+    // Check if every player has a total score of 0
+    const allScoresZero = players.every(p => (totals[p.id] || 0) === 0);
 
     if (players.length === 0) return (
         <section className="section">
@@ -27,13 +30,14 @@ function ScoreTable({ players, games, totals, addGame, removeGame, resetGames, u
             <div className="table-container">
                 <table className="score-table">
                     <thead>
-                        {/* Table head stays identical... */}
                         <tr>
                             <th>Game</th>
                             {players.map(player => (
                                 <th key={player.id}>
                                     <div className="player-header">
-                                        <div className="player-color-dot" style={{ backgroundColor: player.color }}></div>
+                                        <div className="player-color-dot" style={{ backgroundColor: player.color }}>
+                                            {player.avatar}
+                                        </div>
                                         {player.name}
                                     </div>
                                 </th>
@@ -41,7 +45,6 @@ function ScoreTable({ players, games, totals, addGame, removeGame, resetGames, u
                         </tr>
                     </thead>
                     <tbody>
-                        {/* Table body stays identical... */}
                         {games.map((game, index) => (
                             <tr key={game.id}>
                                 <td className="game-label">
@@ -74,16 +77,20 @@ function ScoreTable({ players, games, totals, addGame, removeGame, resetGames, u
                 </table>
             </div>
 
-            {/* NEW FINISH GAME BUTTON BELOW TABLE */}
+            {/* FINISH GAME BUTTON - NOW WITH DISABLED LOGIC */}
             {games.length > 0 && players.length > 0 && (
                 <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'center' }}>
-                    <button className="btn btn--primary btn--lg" onClick={() => setShowFinishModal(true)}>
+                    <button 
+                        className="btn btn--primary btn--lg" 
+                        onClick={() => setShowFinishModal(true)}
+                        disabled={allScoresZero}
+                        title={allScoresZero ? "Scores must be greater than 0 to finish the game!" : "Finish Game"}
+                    >
                         🏆 Finish Game
                     </button>
                 </div>
             )}
 
-            {/* MODAL COMPONENT */}
             {showFinishModal && (
                 <FinishModals 
                     players={players} 

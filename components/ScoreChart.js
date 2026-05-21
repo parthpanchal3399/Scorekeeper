@@ -17,6 +17,34 @@ function ScoreChart({ players, games, totals, colorScheme }) {
         return cumulative;
     };
 
+    // ✨ NEW: Helper to draw the avatar inside the color dot for Chart.js
+    const createAvatarCanvas = (color, avatar) => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 24;
+        canvas.height = 24;
+        const ctx = canvas.getContext('2d');
+
+        // Draw colored circle
+        ctx.beginPath();
+        ctx.arc(12, 12, 11, 0, 2 * Math.PI);
+        ctx.fillStyle = color;
+        ctx.fill();
+        
+        // Add border
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+        ctx.stroke();
+
+        // Draw emoji
+        if (avatar) {
+            ctx.font = '14px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(avatar, 12, 13); // 13px y-offset slightly centers emojis better
+        }
+        return canvas;
+    };
+
     const getChartConfig = () => {
         const textColor = colorScheme === "dark" ? "#fff" : "#222";
         
@@ -26,6 +54,7 @@ function ScoreChart({ players, games, totals, colorScheme }) {
             return {
                 type: 'bar',
                 data: {
+                    // Just use the name for the X-axis
                     labels: sortedPlayers.map(player => player.name),
                     datasets: [{
                         label: 'Total Score',
@@ -38,15 +67,29 @@ function ScoreChart({ players, games, totals, colorScheme }) {
                 options: {
                     responsive: true, maintainAspectRatio: false,
                     plugins: {
+                        tooltip: {
+                            callbacks: {
+                                // Add avatar to the tooltip title
+                                title: (tooltipItems) => {
+                                    const index = tooltipItems[0].dataIndex;
+                                    const p = sortedPlayers[index];
+                                    return `${p.avatar || ''} ${p.name}`;
+                                }
+                            }
+                        },
                         legend: {
                             display: true, position: 'top',
                             labels: {
                                 font: { size: 14, weight: 'bold' }, color: textColor,
-                                usePointStyle: true, pointStyle: 'circle', padding: 15,
+                                usePointStyle: true, padding: 15,
+                                // Generate custom labels injecting our generated canvas
                                 generateLabels: (chart) => chart.data.labels.map((label, i) => ({
-                                    text: label, fillStyle: chart.data.datasets[0].backgroundColor[i],
+                                    text: label, 
+                                    fillStyle: chart.data.datasets[0].backgroundColor[i],
                                     strokeStyle: chart.data.datasets[0].borderColor[i],
-                                    lineWidth: 2, hidden: false, index: i, pointStyle: 'circle', fontColor: textColor
+                                    lineWidth: 2, hidden: false, index: i, 
+                                    pointStyle: createAvatarCanvas(sortedPlayers[i].color, sortedPlayers[i].avatar), 
+                                    fontColor: textColor
                                 }))
                             }
                         },
@@ -61,17 +104,56 @@ function ScoreChart({ players, games, totals, colorScheme }) {
         } else {
             const gameLabels = games.map((_, index) => `Game ${index + 1}`);
             const cumulativeScores = getCumulativeScores();
+            
             const datasets = players.map(player => ({
-                label: player.name, data: cumulativeScores[player.id],
-                borderColor: player.color, backgroundColor: player.color,
-                borderWidth: 3, pointRadius: 2, yAxisID: 'y'
+                label: player.name, 
+                data: cumulativeScores[player.id],
+                borderColor: player.color, 
+                backgroundColor: player.color,
+                borderWidth: 3, 
+                pointRadius: 4, 
+                pointHoverRadius: 6,
+                // Replace the dots on the line chart with the avatar canvas!
+                pointStyle: createAvatarCanvas(player.color, player.avatar),
+                yAxisID: 'y'
             }));
 
             return {
                 type: 'line', data: { labels: gameLabels, datasets: datasets },
                 options: {
                     responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { display: true, labels: { color: textColor } } },
+                    plugins: { 
+                        tooltip: {
+                            callbacks: {
+                                // Add avatar to the tooltip label
+                                label: (context) => {
+                                    const index = context.datasetIndex;
+                                    const p = players[index];
+                                    return `${p.avatar || ''} ${p.name}: ${context.parsed.y}`;
+                                }
+                            }
+                        },
+                        legend: { 
+                            display: true, 
+                            labels: { 
+                                color: textColor, 
+                                usePointStyle: true, 
+                                padding: 15,
+                                // Generate custom labels injecting our generated canvas
+                                generateLabels: (chart) => chart.data.datasets.map((dataset, i) => ({
+                                    text: dataset.label,
+                                    fillStyle: dataset.backgroundColor,
+                                    strokeStyle: dataset.borderColor,
+                                    lineWidth: 2,
+                                    hidden: !chart.isDatasetVisible(i),
+                                    datasetIndex: i,
+                                    pointStyle: createAvatarCanvas(players[i].color, players[i].avatar),
+                                    fontColor: textColor
+                                }))
+                            } 
+                        },
+                        title: { display: true, text: 'Total Score Progress Over Games', font: { size: 22, weight: 'bold' }, color: textColor }
+                    },
                     scales: {
                         x: { ticks: { color: textColor } },
                         y: { position: 'right', beginAtZero: true, ticks: { color: textColor } }
