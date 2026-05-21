@@ -1050,3 +1050,25 @@ select.form-control {
     font-size: var(--font-size-sm);
   }
 }
+
+/* Layout for game round labels to accommodate delete button */
+.game-row-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-8);
+}
+
+.icon-btn--small {
+  width: 18px;
+  height: 18px;
+  font-size: 10px;
+  opacity: 0.5;
+  padding: 0;
+}
+
+.icon-btn--small:hover {
+  opacity: 1;
+  background-color: var(--color-error);
+  color: white;
+}
