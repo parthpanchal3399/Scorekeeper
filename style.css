@@ -867,16 +867,17 @@ select.form-control {
 /* Score Table */
 .table-container {
   overflow-x: auto;
+  overflow-y: auto;          /* Allow vertical scrolling */
+  max-height: 400px;         /* Adjust this height as needed for your layout */
   margin: var(--space-16) 0;
+  border: 1px solid var(--color-card-border); /* Move border here to wrap the scroll area cleanly */
+  border-radius: var(--radius-base);
 }
 
 .score-table {
   width: 100%;
   border-collapse: collapse;
   background-color: var(--color-surface);
-  border-radius: var(--radius-base);
-  overflow: hidden;
-  border: 1px solid var(--color-card-border);
 }
 
 .score-table th,
@@ -890,7 +891,14 @@ select.form-control {
   background-color: var(--color-bg-1);
   font-weight: var(--font-weight-semibold);
   color: var(--color-text);
-  position: relative;
+  
+  /* Sticky Header Styles */
+  position: sticky;
+  top: 0;
+  z-index: 2; /* Keeps the headers layered above input fields and text */
+  
+  /* Optional: explicit box-shadow border replaces native borders which disappear on sticky elements */
+  box-shadow: inset 0 -1px 0 var(--color-card-border-inner);
 }
 
 .player-header {
